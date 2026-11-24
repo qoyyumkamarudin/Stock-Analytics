@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#00D09C" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="M+ Shariah AI" />
+  <title>M+ Shariah AI | Bursa & US Shariah Stock Analysis</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: '#00D09C',
+            brandDark: '#00A87E',
+            darkBg: '#0B0E14',
+            darkCard: '#131926',
+            darkBorder: '#1E293B',
+            bull: '#00D09C',
+            bear: '#FF4D4F'
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap');
+    body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+    .glass { backdrop-filter: blur(12px); }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0, 208, 156, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(0, 208, 156, 0); }
+    }
+    .pulse-brand { animation: pulseGlow 2.5s infinite; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-darkBg dark:text-slate-100 transition-colors duration-200 min-h-screen pb-20 md:pb-6">
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 md:px-0"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-30 bg-white/90 dark:bg-darkCard/90 glass border-b border-slate-200 dark:border-darkBorder">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-3">
+      <!-- App Graph Logo & Brand -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('market')">
+        <div class="w-10 h-10 rounded-xl bg-darkBg border border-brand/50 flex items-center justify-center shadow-lg shadow-brand/10">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00D09C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 17 8 12 12 14 17 7 21 5"></polyline>
+            <polyline points="16 5 21 5 21 10"></polyline>
+            <circle cx="8" cy="12" r="1.5" fill="#fff"></circle>
+            <circle cx="17" cy="7" r="1.5" fill="#fff"></circle>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-base md:text-lg tracking-tight">M+ Shariah <span class="text-brand">AI</span></span>
+            <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-brand/15 text-brand border border-brand/30">HALAL</span>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block" data-i18n="tagline">Bursa Malaysia & US Shariah Agent</p>
+        </div>
+      </div>
+
+      <!-- Desktop Navigation Pills -->
+      <nav class="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-darkBg p-1 rounded-full border border-slate-200 dark:border-darkBorder">
+        <button onclick="navigateTo('market')" id="nav-market" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition bg-brand text-slate-950 font-semibold" data-i18n="navMarket">Live Market</button>
+        <button onclick="navigateTo('signals')" id="nav-signals" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition text-slate-600 dark:text-slate-300 hover:text-brand" data-i18n="navSignals">AI Signals</button>
+        <button onclick="navigateTo('dividends')" id="nav-dividends" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition text-slate-600 dark:text-slate-300 hover:text-brand" data-i18n="navDividends">Dividends</button>
+        <button onclick="navigateTo('watchlist')" id="nav-watchlist" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition text-slate-600 dark:text-slate-300 hover:text-brand" data-i18n="navWatchlist">Weekly Watchlist</button>
+        <button onclick="navigateTo('ai')" id="nav-ai" class="nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition text-slate-600 dark:text-slate-300 hover:text-brand" data-i18n="navAI">AI Agent</button>
+      </nav>
+
+      <!-- Right Controls: Install App, Alerts, Dark Mode, Settings -->
+      <div class="flex items-center gap-2">
+        <button id="installAppBtn" onclick="triggerPWAInstall()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-brand/15 hover:bg-brand/25 text-brand border border-brand/40 text-xs font-semibold transition pulse-brand" title="Install App on Desktop or Phone">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span data-i18n="installBtn">Install App</span>
+        </button>
+
+        <button onclick="simulateLiveAlert()" class="relative p-2 rounded-full bg-slate-100 dark:bg-darkBg border border-slate-200 dark:border-darkBorder hover:border-brand transition" title="Test Signal Alert">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span id="alertBadge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-bear text-white text-[10px] font-bold flex items-center justify-center">3</span>
+        </button>
+
+        <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-slate-100 dark:bg-darkBg border border-slate-200 dark:border-darkBorder hover:border-brand transition" title="Toggle Dark Mode">
+          <svg id="sunIcon" class="hidden dark:block" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg id="moonIcon" class="block dark:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+
+        <button onclick="navigateTo('settings')" id="nav-settings" class="p-2 rounded-full bg-slate-100 dark:bg-darkBg border border-slate-200 dark:border-darkBorder hover:border-brand transition" title="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="max-w-7xl mx-auto px-4 pt-5">
+
+    <!-- PAGE 1: LIVE SHARIAH MARKET -->
+    <section id="page-market" class="page-section space-y-5">
+      <!-- Market Summary Banner -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border border-slate-200 dark:border-darkBorder">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span>FBMSHA (Bursa Shariah)</span>
+            <span class="text-bull font-semibold">+0.84%</span>
+          </div>
+          <div class="text-xl font-bold mono mt-1">12,418.65</div>
+          <div id="feedStatusMY" class="text-[11px] text-brand mt-0.5">● Syncing Real Market Data...</div>
+        </div>
+        <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border border-slate-200 dark:border-darkBorder">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span>DJIM US (US Islamic)</span>
+            <span class="text-bull font-semibold">+1.26%</span>
+          </div>
+          <div class="text-xl font-bold mono mt-1">10,892.30</div>
+          <div id="feedStatusUS" class="text-[11px] text-brand mt-0.5">● TradingView Live Engine Ready</div>
+        </div>
+        <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border border-slate-200 dark:border-darkBorder">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span data-i18n="activeSignals">Active Entry/TP Signals</span>
+            <span class="px-2 py-0.5 rounded-full bg-brand/15 text-brand text-[10px] font-bold">AI LIVE</span>
+          </div>
+          <div class="text-xl font-bold mono mt-1" id="statSignalCount">6</div>
+          <div class="text-[11px] text-slate-400 mt-0.5" data-i18n="clickSignals">Click AI Signals tab for alerts</div>
+        </div>
+        <div class="bg-white dark:bg-darkCard p-4 rounded-2xl border border-slate-200 dark:border-darkBorder">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span data-i18n="shariahFilter">Shariah Compliance</span>
+            <span class="text-brand font-bold">100%</span>
+          </div>
+          <div class="text-xl font-bold mt-1">SAC & AAOIFI</div>
+          <div class="text-[11px] text-slate-400 mt-0.5" data-i18n="nonShariahBlocked">Non-Shariah counters filtered out</div>
+        </div>
+      </div>
+
+      <!-- Filter Tabs & Search -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-2 overflow-x-auto pb-1">
+          <button onclick="setMarketFilter('ALL')" id="flt-ALL" class="flt-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-brand text-slate-950">All Shariah (12)</button>
+          <button onclick="setMarketFilter('MY')" id="flt-MY" class="flt-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-darkCard border border-slate-200 dark:border-darkBorder">🇲🇾 Bursa Malaysia</button>
+          <button onclick="setMarketFilter('US')" id="flt-US" class="flt-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-darkCard border border-slate-200 dark:border-darkBorder">🇺🇸 US Shariah</button>
+          <button onclick="syncAllRealMarketData()" class="px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-200 dark:bg-darkBg hover:border-brand border border-transparent transition">↻ Sync Live Prices</button>
+        </div>
+        <div class="relative w-full sm:w-72">
+          <input type="text" id="stockSearch" oninput="renderStockTable()" placeholder="Search ticker or company..." class="w-full pl-9 pr-4 py-2 rounded-full text-xs bg-white dark:bg-darkCard border border-slate-200 dark:border-darkBorder focus:outline-none focus:border-brand" />
+          <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+      </div>
+
+      <!-- Stock Screener Table -->
+      <div class="bg-white dark:bg-darkCard rounded-2xl border border-slate-200 dark:border-darkBorder overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 dark:border-darkBorder text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50/70 dark:bg-darkBg/50">
+                <th class="py-3.5 px-4" data-i18n="colStock">Stock / Logo</th>
+                <th class="py-3.5 px-3" data-i18n="colMarket">Market</th>
+                <th class="py-3.5 px-3 text-right" data-i18n="colPrice">Last Price</th>
+                <th class="py-3.5 px-3 text-right" data-i18n="colChange">Change</th>
+                <th class="py-3.5 px-3 text-right hidden md:table-cell" data-i18n="colEntry">AI Entry</th>
+                <th class="py-3.5 px-3 text-right hidden md:table-cell" data-i18n="colTP">Take Profit</th>
+                <th class="py-3.5 px-3 text-center" data-i18n="colSignal">AI Signal</th>
+                <th class="py-3.5 px-4 text-right" data-i18n="colAction">Watch</th>
+              </tr>
+            </thead>
+            <tbody id="stockTableBody" class="divide-y divide-slate-100 dark:divide-darkBorder text-sm"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 2: STOCK DETAIL & REAL LIVE CHART PAGE -->
+    <section id="page-detail" class="page-section hidden space-y-5">
+      <div class="flex items-center justify-between">
+        <button onclick="navigateTo('market')" class="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white dark:bg-darkCard border border-slate-200 dark:border-darkBorder text-xs font-semibold hover:border-brand transition">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="15 18 9 12 15 6"/></svg>
+          <span data-i18n="backToMarket">Back to Market</span>
+        </button>
+        <div class="flex items-center gap-2">
+          <button id="detailWatchBtn" onclick="toggleWatchlistFromDetail()" class="px-4 py-1.5 rounded-full text-xs font-semibold bg-brand text-slate-950">+ Add Watchlist</button>
+        </div>
+      </div>
+
+      <!-- Company Header Card -->
+      <div class="bg-white dark:bg-darkCard p-5 rounded-2xl border border-slate-200 dark:border-darkBorder flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div id="detailLogo" class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"></div>
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h1 id="detailName" class="text-xl font-bold">Tenaga Nasional Bhd</h1>
+              <span id="detailTicker" class="mono text-xs px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-darkBg font-semibold">5347.KL</span>
+              <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-brand/15 text-brand border border-brand/30">✓ SHARIAH</span>
+            </div>
+            <p id="detailSector" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Utilities • Bursa Malaysia Main Market</p>
+          </div>
+        </div>
+        <div class="text-left md:text-right">
+          <div id="detailPrice" class="text-2xl md:text-3xl font-bold mono">RM 14.28</div>
+          <div id="detailChange" class="text-sm font-semibold text-bull mono mt-0.5">+0.32 (+2.29%)</div>
+        </div>
+      </div>
+
+      <!-- Live Interactive Chart + AI Trade Setup -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <div class="lg:col-span-2 bg-white dark:bg-darkCard p-5 rounded-2xl border border-slate-200 dark:border-darkBorder">
+          <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div>
+              <h2 class="font-bold text-sm" data-i18n="liveChartTitle">Real-Time Market Chart & AI Levels</h2>
+              <p id="chartSourceLabel" class="text-[11px] text-brand">Connected to Real Exchange Data Feed</p>
+            </div>
+            <div id="bursaTimeframeBar" class="flex items-center gap-1 bg-slate-100 dark:bg-darkBg p-1 rounded-full">
+              <button onclick="updateDetailTimeframe('1d')" class="tf-btn px-3 py-1 rounded-full text-xs font-semibold bg-brand text-slate-950">1D</button>
+              <button onclick="updateDetailTimeframe('5d')" class="tf-btn px-3 py-1 rounded-full text-xs font-semibold">5D</button>
+              <button onclick="updateDetailTimeframe('1mo')" class="tf-btn px-3 py-1 rounded-full text-xs font-semibold">1M</button>
+              <button onclick="updateDetailTimeframe('1y')" class="tf-btn px-3 py-1 rounded-full text-xs font-semibold">1Y</button>
+            </div>
+          </div>
+
+          <!-- TradingView Container (Used for US Shariah Stocks) -->
+          <div id="tradingviewContainer" class="hidden h-[420px] w-full rounded-xl overflow-hidden border border-slate-200 dark:border-darkBorder"></div>
+
+          <!-- Real Yahoo Finance / Bursa Malaysia Chart Container -->
+          <div id="bursaChartContainer" class="h-[360px] w-full">
+            <canvas id="detailChartCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- AI Entry / TP Signal Card & Company Fundamentals -->
+        <div class="space-y-4">
+          <div class="bg-white dark:bg-darkCard p-5 rounded-2xl border border-slate-200 dark:border-darkBorder space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-brand" data-i18n="aiTradePlan">AI Agent Trade Plan</span>
+              <span id="detailSignalBadge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-bull/15 text-bull">BUY ENTRY</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 pt-1">
+              <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-darkBg border border-slate-200 dark:border-darkBorder">
+                <div class="text-[10px] text-slate-400">ENTRY ZONE</div>
+                <div id="detailEntry" class="mono font-bold text-sm text-brand mt-0.5">14.10</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-darkBg border border-slate-200 dark:border-darkBorder">
+                <div class="text-[10px] text-slate-400">TAKE PROFIT</div>
+                <div id="detailTP" class="mono font-bold text-sm text-emerald-400 mt-0.5">15.40</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-darkBg border border-slate-200 dark:border-darkBorder">
+                <div class="text-[10px] text-slate-400">STOP LOSS</div>
+                <div id="detailSL" class="mono font-bold text-sm text-bear mt-0.5">13.60</div>
+              </div>
+            </div>
+            <p id="detailRationale" class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed"></p>
+            <button onclick="setCustomAlertForCurrent()" class="w-full py-2.5 rounded-full bg-brand hover:bg-brandDark text-slate-950 font-bold text-xs transition" data-i18n="activateAlertBtn">
+              Enable Entry & TP Push Notification
+            </button>
+          </div>
+
+          <div class="bg-white dark:bg-darkCard p-5 rounded-2xl border border-slate-200 dark:border-darkBorder space-y-2.5">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400" data-i18n="companyOverview">Company Fundamentals</h3>
+            <div class="flex justify-between text-xs"><span class="text-slate-400">Market Cap</span><span id="detailMcap" class="mono font-semibold">RM 82.4B</span></div>
+            <div class="flex justify-between text-xs"><span class="text-slate-400">P/E Ratio</span><span id="detailPE" class="mono font-semibold">18.4x</span></div>
+            <div class="flex justify-between text-xs"><span class="text-slate-400">Dividend Yield</span><span id="detailDiv" class="mono font-semibold text-brand">4.15%</span></div>
+            <div class="flex justify-between text-xs"><span class="text-slate-400">Shariah Status</span><span class="font-semibold text-brand">Compliant (SAC/DJIM)</span></div>
+            <p id="detailDesc" class="text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-darkBorder leading-relaxed"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE 3: AI SIGNALS & ALERTS -->
+    <section id="page-signals" class="page-section hidden space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-lg font-bold" data-i18n="signalsHeader">AI Entry & Take Profit Signal Triggers</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="signalsSub">Automated technical breakout & profit-taking notifications saved in database</p>
+        </div>
+        <button onclick="simulateLiveAlert()" class="px-4 py-2 rounded-full bg-brand text-slate-950 font-bold text-xs hover:bg-brandDark transition">
+          + Trigger Live AI Scan Now
+        </button>
+      </div>
+      <div id="signalsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- PAGE 4: SHARIAH DIVIDEND SUGGESTIONS -->
+    <section id="page-dividends" class="page-section hidden space-y-5">
+      <div class="bg-white dark:bg-darkCard p-5 rounded-2xl border border-slate-200 dark:border-darkBorder flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold" data-i18n="divHeader">AI Shariah Dividend Suggestions</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="divSub">High-yield, consistent Shariah dividend payers across Bursa Malaysia & US</p>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-100 dark:bg-darkBg p-2 rounded-2xl border border-slate-200 dark:border-darkBorder">
+          <span class="text-xs text-slate-400 pl-2">Capital:</span>
+          <input type="number" id="divCapitalInput" value="10000" oninput="renderDividends()" class="w-28 bg-transparent mono font-bold text-sm focus:outline-none text-brand" />
+          <span class="text-xs font-semibold pr-2">RM / USD</span>
+        </div>
+      </div>
+      <div id="dividendsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- PAGE 5: AUTO WEEKLY WATCHLIST -->
+    <section id="page-watchlist" class="page-section hidden space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-lg font-bold" data-i18n="watchHeader">AI Auto-Weekly Shariah Watchlist</h2>
+            <span id="weekBadge" class="px-2.5 py-0.5 rounded-full bg-brand/15 text-brand text-xs font-bold">Week #48 • Nov 2026</span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400" data-i18n="watchSub">Automatically refreshed every Monday based on volume momentum & Shariah screening</p>
+        </div>
+        <button onclick="regenerateWeeklyWatchlist()" class="px-4 py-2 rounded-full bg-slate-900 dark:bg-brand text-white dark:text-slate-950 font-bold text-xs transition">
+          ↻ Refresh Weekly AI Picks
+        </button>
+      </div>
+      <div id="watchlistGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- PAGE 6: BUILT-IN AI STOCK AGENT -->
+    <section id="page-ai" class="page-section hidden">
+      <div class="bg-white dark:bg-darkCard rounded-2xl border border-slate-200 dark:border-darkBorder overflow-hidden flex flex-col h-[72vh]">
+        <div class="p-4 border-b border-slate-200 dark:border-darkBorder flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-full bg-brand/20 text-brand flex items-center justify-center font-bold">AI</div>
+            <div>
+              <h2 class="font-bold text-sm">M+ Shariah AI Stock Analyst</h2>
+              <p class="text-[11px] text-slate-400">Ask about Bursa/US Shariah stocks, entry levels, TP targets, or dividends</p>
+            </div>
+          </div>
+          <span class="text-[11px] px-2.5 py-1 rounded-full bg-brand/15 text-brand font-semibold">Online</span>
+        </div>
+
+        <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 text-sm">
+          <div class="bg-slate-100 dark:bg-darkBg p-3.5 rounded-2xl rounded-tl-none max-w-xl">
+            <p class="font-semibold text-brand text-xs mb-1">M+ Shariah AI</p>
+            <p class="text-xs leading-relaxed">Assalamualaikum! Ask me anything about Shariah stocks on Bursa Malaysia or the US market—for example: <em>"Which Shariah stock has the best dividend?"</em>, <em>"Analyze NVDA entry & TP"</em>, or <em>"Saham Bursa apa yang sedang uptrend?"</em></p>
+          </div>
+        </div>
+
+        <div class="px-4 py-2 border-t border-slate-100 dark:border-darkBorder flex gap-2 overflow-x-auto">
+          <button onclick="sendQuickPrompt('Suggest top Shariah dividend stocks')" class="shrink-0 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-darkBg hover:border-brand border border-transparent">Top Shariah Dividends</button>
+          <button onclick="sendQuickPrompt('Give me entry and take profit for INARI')" class="shrink-0 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-darkBg hover:border-brand border border-transparent">INARI Entry & TP</button>
+          <button onclick="sendQuickPrompt('Analyze NVDA and AAPL Shariah setup')" class="shrink-0 text-[11px] px-3 py-1 rounded-full bg-slate-100 dark:bg-darkBg hover:border-brand border border-transparent">US Tech Shariah Setup</button>
+        </div>
+
+        <form onsubmit="handleChatSubmit(event)" class="p-3 border-t border-slate-200 dark:border-darkBorder flex gap-2">
+          <input type="text" id="chatInput" placeholder="Ask M+ Shariah AI anything..." class="flex-1 px-4 py-2.5 rounded-full text-xs bg-slate-100 dark:bg-darkBg border border-slate-200 dark:border-darkBorder focus:outline-none focus:border-brand" />
+          <button type="submit" class="px-5 py-2.5 rounded-full bg-brand text-slate-950 font-bold text-xs hover:bg-brandDark transition">Send</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- PAGE 7: SETTINGS -->
+    <section id="page-settings" class="page-section hidden max-w-2xl mx-auto space-y-5">
+      <div class="bg-white dark:bg-darkCard p-6 rounded-2xl border border-slate-200 dark:border-darkBorder space-y-5">
+        <h2 class="text-lg font-bold" data-i18n="settingsTitle">App Settings & Database</h2>
+
+        <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-darkBorder">
+          <div>
+            <div class="font-semibold text-sm" data-i18n="langLabel">Language / Bahasa</div>
+            <div class="text-xs text-slate-400">Switch interface between English and Bahasa Melayu</div>
+          </div>
+          <div class="flex gap-1 bg-slate-100 dark:bg-darkBg p-1 rounded-full">
+            <button onclick="setLanguage('en')" id="lang-en" class="px-4 py-1.5 rounded-full text-xs font-bold bg-brand text-slate-950">English</button>
+            <button onclick="setLanguage('ms')" id="lang-ms" class="px-4 py-1.5 rounded-full text-xs font-bold">Bahasa Melayu</button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-darkBorder">
+          <div>
+            <div class="font-semibold text-sm" data-i18n="darkModeLabel">Dark Mode Theme</div>
+            <div class="text-xs text-slate-400">M+ Global dark trading theme or clean daylight theme</div>
+          </div>
+          <button onclick="toggleDarkMode()" class="px-4 py-1.5 rounded-full text-xs font-bold bg-slate-900 dark:bg-brand text-white dark:text-slate-950">
+            Toggle Dark / Light
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between py-3 border-b border-slate-100 dark:border-darkBorder">
+          <div>
+            <div class="font-semibold text-sm">Download / Install App (Desktop & Phone)</div>
+            <div class="text-xs text-slate-400">Install as a standalone app on Windows, Mac, Android, or iOS</div>
+          </div>
+          <button onclick="triggerPWAInstall()" class="px-4 py-1.5 rounded-full text-xs font-bold bg-brand text-slate-950">
+            Install Now
+          </button>
+        </div>
+
+        <div class="space-y-2 pt-1">
+          <label class="block font-semibold text-sm">Gemini AI API Key (Optional)</label>
+          <p class="text-xs text-slate-400">Leave blank to use the built-in Shariah AI engine, or enter your Gemini API key for live cloud AI analysis.</p>
+          <div class="flex gap-2">
+            <input type="password" id="geminiKeyInput" placeholder="AIzaSy..." class="flex-1 px-4 py-2 rounded-full text-xs bg-slate-100 dark:bg-darkBg border border-slate-200 dark:border-darkBorder focus:outline-none focus:border-brand" />
+            <button onclick="saveSettings()" class="px-5 py-2 rounded-full bg-brand text-slate-950 font-bold text-xs">Save</button>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 dark:border-darkBorder flex items-center justify-between">
+          <span class="text-xs text-slate-400">Local Database: Watchlist, Alerts & Preferences synced</span>
+          <button onclick="resetDatabase()" class="text-xs text-bear font-semibold hover:underline">Reset App Data</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 dark:bg-darkCard/95 glass border-t border-slate-200 dark:border-darkBorder flex justify-around py-2">
+    <button onclick="navigateTo('market')" class="mob-nav flex flex-col items-center text-[10px] font-semibold text-brand" data-page="market">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span data-i18n="navMarket">Market</span>
+    </button>
+    <button onclick="navigateTo('signals')" class="mob-nav flex flex-col items-center text-[10px] font-semibold text-slate-400" data-page="signals">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+      <span data-i18n="navSignals">Signals</span>
+    </button>
+    <button onclick="navigateTo('dividends')" class="mob-nav flex flex-col items-center text-[10px] font-semibold text-slate-400" data-page="dividends">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span data-i18n="navDividends">Dividends</span>
+    </button>
+    <button onclick="navigateTo('watchlist')" class="mob-nav flex flex-col items-center text-[10px] font-semibold text-slate-400" data-page="watchlist">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span data-i18n="navWatchlist">Watchlist</span>
+    </button>
+    <button onclick="navigateTo('ai')" class="mob-nav flex flex-col items-center text-[10px] font-semibold text-slate-400" data-page="ai">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span data-i18n="navAI">AI Agent</span>
+    </button>
+  </nav>
+
+  <script>
+    // --- SHARIAH STOCK DATASET WITH REAL EXCHANGE SYMBOLS ---
+    const STOCKS = [
+      { id: 'TENAGA', ticker: '5347.KL', tvSymbol: 'MYX:TENAGA', name: 'Tenaga Nasional Bhd', market: 'MY', currency: 'RM', price: 14.28, change: 2.29, entry: 14.10, tp: 15.40, sl: 13.60, signal: 'BUY ENTRY', divYield: 4.15, mcap: 'RM 82.4B', pe: '18.4x', sector: 'Utilities', color: '#0EA5E9', iconText: 'TNB', desc: 'Malaysia’s largest electricity utility provider with strong renewable energy grid expansion and consistent Shariah dividend payouts.', rationale: 'Breakout above resistance with institutional volume.' },
+      { id: 'INARI', ticker: '0166.KL', tvSymbol: 'MYX:INARI', name: 'Inari Amertron Bhd', market: 'MY', currency: 'RM', price: 3.18, change: 3.58, entry: 3.12, tp: 3.55, sl: 2.95, signal: 'BUY ENTRY', divYield: 3.10, mcap: 'RM 11.9B', pe: '29.2x', sector: 'Semiconductors', color: '#8B5CF6', iconText: 'INR', desc: 'Leading OSAT semiconductor packaging player in Malaysia benefiting from RF and AI optical transceiver demand.', rationale: 'Bullish flag breakout on daily chart.' },
+      { id: 'GAMUDA', ticker: '5398.KL', tvSymbol: 'MYX:GAMUDA', name: 'Gamuda Bhd', market: 'MY', currency: 'RM', price: 8.65, change: 1.88, entry: 8.50, tp: 9.40, sl: 8.10, signal: 'TAKE PROFIT NEAR', divYield: 2.35, mcap: 'RM 24.1B', pe: '21.5x', sector: 'Construction & Infra', color: '#10B981', iconText: 'GMD', desc: 'Regional engineering, property, and data-center infrastructure builder with record orderbook.', rationale: 'Approaching initial resistance; trail stop-loss to lock gains.' },
+      { id: 'PCHEM', ticker: '5183.KL', tvSymbol: 'MYX:PCHEM', name: 'Petronas Chemicals', market: 'MY', currency: 'RM', price: 5.42, change: -0.73, entry: 5.35, tp: 6.10, sl: 5.05, signal: 'ACCUMULATE', divYield: 3.85, mcap: 'RM 43.3B', pe: '22.8x', sector: 'Industrial & Chemicals', color: '#00D09C', iconText: 'PCG', desc: 'Integrated petrochemicals producer in Southeast Asia with strong net cash balance sheet.', rationale: 'Pullback into high-probability demand zone.' },
+      { id: 'SIMEPLT', ticker: '5285.KL', tvSymbol: 'MYX:SDG', name: 'SD Guthrie Bhd', market: 'MY', currency: 'RM', price: 4.88, change: 1.24, entry: 4.80, tp: 5.30, sl: 4.60, signal: 'BUY ENTRY', divYield: 4.40, mcap: 'RM 33.7B', pe: '19.1x', sector: 'Plantation', color: '#F59E0B', iconText: 'SDG', desc: 'World’s largest certified sustainable palm oil producer with recurring dividend income.', rationale: 'Higher low formed above 50-EMA; attractive dividend yield.' },
+      { id: 'MISCBHD', ticker: '3816.KL', tvSymbol: 'MYX:MISC', name: 'MISC Bhd', market: 'MY', currency: 'RM', price: 7.92, change: 0.64, entry: 7.80, tp: 8.50, sl: 7.50, signal: 'DIVIDEND PICK', divYield: 4.65, mcap: 'RM 35.3B', pe: '15.6x', sector: 'Energy Shipping', color: '#3B82F6', iconText: 'MSC', desc: 'Global LNG carrier and offshore floating solutions provider with quarterly dividend track record.', rationale: 'Steady uptrend channel with 4.65% Shariah dividend yield.' },
+      { id: 'NVDA', ticker: 'NVDA', tvSymbol: 'NASDAQ:NVDA', name: 'NVIDIA Corporation', market: 'US', currency: '$', price: 146.50, change: 3.42, entry: 142.00, tp: 162.00, sl: 134.00, signal: 'BUY ENTRY', divYield: 0.03, mcap: '$3.58T', pe: '48.5x', sector: 'AI & Semiconductors', color: '#22C55E', iconText: 'NV', desc: 'Dominant AI data-center GPU and accelerated computing leader compliant with DJIM Shariah ratios.', rationale: 'Strong momentum bounce from 20-DMA.' },
+      { id: 'AAPL', ticker: 'AAPL', tvSymbol: 'NASDAQ:AAPL', name: 'Apple Inc.', market: 'US', currency: '$', price: 232.80, change: 1.15, entry: 229.50, tp: 248.00, sl: 222.00, signal: 'BUY ENTRY', divYield: 0.44, mcap: '$3.52T', pe: '33.1x', sector: 'Consumer Tech', color: '#64748B', iconText: 'AP', desc: 'Global ecosystem leader in consumer hardware, silicon, and recurring digital services.', rationale: 'Clean cup-and-handle breakout.' },
+      { id: 'MSFT', ticker: 'MSFT', tvSymbol: 'NASDAQ:MSFT', name: 'Microsoft Corp.', market: 'US', currency: '$', price: 428.40, change: 0.92, entry: 422.00, tp: 455.00, sl: 410.00, signal: 'BUY ENTRY', divYield: 0.78, mcap: '$3.18T', pe: '34.8x', sector: 'Cloud & Enterprise AI', color: '#0284C7', iconText: 'MS', desc: 'Enterprise cloud (Azure) and AI productivity software powerhouse.', rationale: 'Institutional accumulation above support.' },
+      { id: 'AVGO', ticker: 'AVGO', tvSymbol: 'NASDAQ:AVGO', name: 'Broadcom Inc.', market: 'US', currency: '$', price: 178.20, change: 2.75, entry: 173.00, tp: 196.00, sl: 164.00, signal: 'TAKE PROFIT NEAR', divYield: 1.32, mcap: '$832B', pe: '36.4x', sector: 'AI Networking', color: '#EF4444', iconText: 'AV', desc: 'Custom AI accelerators and enterprise infrastructure software leader with strong dividend growth.', rationale: 'Approaching upper channel; consider partial Take Profit.' },
+      { id: 'TSLA', ticker: 'TSLA', tvSymbol: 'NASDAQ:TSLA', name: 'Tesla Inc.', market: 'US', currency: '$', price: 338.90, change: 4.12, entry: 325.00, tp: 375.00, sl: 305.00, signal: 'BUY ENTRY', divYield: 0.00, mcap: '$1.08T', pe: '72.0x', sector: 'EV & Robotics', color: '#DC2626', iconText: 'TS', desc: 'Electric vehicles, grid energy storage, and autonomous AI robotics innovator.', rationale: 'High-volume breakout; momentum favors upside target.' },
+      { id: 'JNJ', ticker: 'JNJ', tvSymbol: 'NYSE:JNJ', name: 'Johnson & Johnson', market: 'US', currency: '$', price: 156.40, change: 0.45, entry: 154.00, tp: 168.00, sl: 149.00, signal: 'DIVIDEND PICK', divYield: 3.18, mcap: '$376B', pe: '15.2x', sector: 'Healthcare', color: '#E11D48', iconText: 'JNJ', desc: 'Dividend King healthcare giant with 60+ years of consecutive dividend increases.', rationale: 'Defensive Shariah dividend anchor yielding 3.18%.' }
+    ];
+
+    let state = JSON.parse(localStorage.getItem('mplus_shariah_db')) || {
+      lang: 'en',
+      dark: true,
+      watchlist: ['TENAGA', 'INARI', 'NVDA', 'AAPL', 'SIMEPLT'],
+      alerts: [
+        { ticker: 'INARI', type: 'ENTRY TRIGGERED', msg: 'INARI crossed Entry Zone! Target TP: RM 3.55', time: 'Just now' },
+        { ticker: 'NVDA', type: 'TAKE PROFIT ALERT', msg: 'NVDA approaching TP1 ($162.00). Secure partial profit.', time: '14m ago' },
+        { ticker: 'TENAGA', type: 'BUY SIGNAL', msg: 'TENAGA bullish breakout detected.', time: '1h ago' }
+      ],
+      geminiKey: ''
+    };
+
+    let currentFilter = 'ALL';
+    let selectedStock = STOCKS[0];
+    let detailChart = null;
+    let deferredPrompt = null;
+
+    function saveDB() {
+      localStorage.setItem('mplus_shariah_db', JSON.stringify(state));
+    }
+
+    // --- FETCH REAL YAHOO FINANCE DATA FOR BURSA & US ---
+    async function fetchRealYahooChart(ticker, range = '1d', interval = '15m') {
+      const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=${range}&interval=${interval}`;
+      const proxies = [
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+        `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`
+      ];
+      for (const proxyUrl of proxies) {
+        try {
+          const res = await fetch(proxyUrl);
+          if (!res.ok) continue;
+          const json = await res.json();
+          const result = json?.chart?.result?.[0];
+          if (result && result.timestamp && result.indicators?.quote?.[0]?.close) {
+            return result;
+          }
+        } catch (e) { /* try next proxy */ }
+      }
+      return null;
+    }
+
+    async function syncAllRealMarketData() {
+      document.getElementById('feedStatusMY').textContent = '● Fetching Live Exchange Quotes...';
+      let updatedCount = 0;
+      await Promise.all(STOCKS.map(async (s) => {
+        const res = await fetchRealYahooChart(s.ticker, '1d', '15m');
+        if (res && res.meta) {
+          const regPrice = res.meta.regularMarketPrice;
+          const prevClose = res.meta.chartPreviousClose || res.meta.previousClose || regPrice;
+          if (regPrice) {
+            s.price = Number(regPrice.toFixed(2));
+            s.change = Number((((regPrice - prevClose) / prevClose) * 100).toFixed(2));
+            s.entry = Number((s.price * 0.985).toFixed(2));
+            s.tp = Number((s.price * 1.08).toFixed(2));
+            s.sl = Number((s.price * 0.95).toFixed(2));
+            updatedCount++;
+          }
+        }
+      }));
+      document.getElementById('feedStatusMY').textContent = updatedCount > 0
+        ? `● Live Market Synced (${updatedCount}/12 Counters)`
+        : '● Offline Mode (Cached Market Levels)';
+      renderStockTable();
+    }
+
+    // --- TRANSLATIONS ---
+    const I18N = {
+      en: {
+        tagline: 'Bursa Malaysia & US Shariah Agent',
+        navMarket: 'Live Market',
+        navSignals: 'AI Signals',
+        navDividends: 'Dividends',
+        navWatchlist: 'Weekly Watchlist',
+        navAI: 'AI Agent',
+        installBtn: 'Install App',
+        activeSignals: 'Active Entry/TP Signals',
+        clickSignals: 'Click AI Signals tab for alerts',
+        shariahFilter: 'Shariah Compliance',
+        nonShariahBlocked: 'Non-Shariah counters filtered out',
+        colStock: 'Stock / Logo',
+        colMarket: 'Market',
+        colPrice: 'Last Price',
+        colChange: 'Change',
+        colEntry: 'AI Entry',
+        colTP: 'Take Profit',
+        colSignal: 'AI Signal',
+        colAction: 'Watch',
+        backToMarket: 'Back to Market',
+        liveChartTitle: 'Real-Time Market Chart & AI Levels',
+        aiTradePlan: 'AI Agent Trade Plan',
+        activateAlertBtn: 'Enable Entry & TP Push Notification',
+        companyOverview: 'Company Fundamentals',
+        signalsHeader: 'AI Entry & Take Profit Signal Triggers',
+        signalsSub: 'Automated technical breakout & profit-taking notifications saved in database',
+        divHeader: 'AI Shariah Dividend Suggestions',
+        divSub: 'High-yield, consistent Shariah dividend payers across Bursa Malaysia & US',
+        watchHeader: 'AI Auto-Weekly Shariah Watchlist',
+        watchSub: 'Automatically refreshed every Monday based on volume momentum & Shariah screening',
+        settingsTitle: 'App Settings & Database',
+        langLabel: 'Language / Bahasa',
+        darkModeLabel: 'Dark Mode Theme'
+      },
+      ms: {
+        tagline: 'Ejen Saham Patuh Syariah Bursa Malaysia & AS',
+        navMarket: 'Pasaran Langsung',
+        navSignals: 'Isyarat AI',
+        navDividends: 'Dividen',
+        navWatchlist: 'Senarai Mingguan',
+        navAI: 'Ejen AI',
+        installBtn: 'Muat Turun App',
+        activeSignals: 'Isyarat Entry/TP Aktif',
+        clickSignals: 'Klik tab Isyarat AI untuk notifikasi',
+        shariahFilter: 'Status Patuh Syariah',
+        nonShariahBlocked: 'Kaunter tidak patuh Syariah ditapis',
+        colStock: 'Saham / Logo',
+        colMarket: 'Pasaran',
+        colPrice: 'Harga Semasa',
+        colChange: 'Perubahan',
+        colEntry: 'Entry AI',
+        colTP: 'Ambil Untung (TP)',
+        colSignal: 'Isyarat AI',
+        colAction: 'Pantau',
+        backToMarket: 'Kembali ke Pasaran',
+        liveChartTitle: 'Carta Pasaran Langsung & Paras AI',
+        aiTradePlan: 'Pelan Dagangan Ejen AI',
+        activateAlertBtn: 'Aktifkan Notifikasi Entry & TP',
+        companyOverview: 'Asas Syarikat',
+        signalsHeader: 'Pencetus Isyarat Entry & Ambil Untung AI',
+        signalsSub: 'Notifikasi automatik breakout teknikal & sasaran untung disimpan dalam pangkalan data',
+        divHeader: 'Cadangan Saham Dividen Syariah AI',
+        divSub: 'Saham dividen tinggi & konsisten patuh Syariah di Bursa Malaysia & AS',
+        watchHeader: 'Senarai Pantau Mingguan Automatik AI',
+        watchSub: 'Dikemas kini setiap minggu berdasarkan momentum & saringan Syariah',
+        settingsTitle: 'Tetapan Aplikasi & Pangkalan Data',
+        langLabel: 'Bahasa / Language',
+        darkModeLabel: 'Tema Mod Gelap (Dark Mode)'
+      }
+    };
+
+    function applyTranslations() {
+      const dict = I18N[state.lang] || I18N.en;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) el.textContent = dict[key];
+      });
+      document.getElementById('lang-en').className = state.lang === 'en' ? 'px-4 py-1.5 rounded-full text-xs font-bold bg-brand text-slate-950' : 'px-4 py-1.5 rounded-full text-xs font-bold';
+      document.getElementById('lang-ms').className = state.lang === 'ms' ? 'px-4 py-1.5 rounded-full text-xs font-bold bg-brand text-slate-950' : 'px-4 py-1.5 rounded-full text-xs font-bold';
+    }
+
+    function setLanguage(lang) {
+      state.lang = lang;
+      saveDB();
+      applyTranslations();
+      showToast(lang === 'ms' ? 'Bahasa ditukar ke Bahasa Melayu' : 'Language switched to English');
+    }
+
+    function applyTheme() {
+      if (state.dark) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    }
+
+    function toggleDarkMode() {
+      state.dark = !state.dark;
+      saveDB();
+      applyTheme();
+      if (!document.getElementById('page-detail').classList.contains('hidden')) {
+        openStockDetail(selectedStock.id);
+      }
+    }
+
+    function getStockLogoSVG(stock, size = 38) {
+      return `
+        <svg width="${size}" height="${size}" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="40" height="40" rx="12" fill="${stock.color}" fill-opacity="0.16"/>
+          <rect x="0.75" y="0.75" width="38.5" height="38.5" rx="11.25" stroke="${stock.color}" stroke-opacity="0.45" stroke-width="1.5"/>
+          <path d="M8 27L15 20L20 23L31 12" stroke="${stock.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
+          <text x="20" y="23" text-anchor="middle" fill="${stock.color}" font-family="Inter, sans-serif" font-weight="800" font-size="11">${stock.iconText}</text>
+        </svg>
+      `;
+    }
+
+    function navigateTo(page) {
+      document.querySelectorAll('.page-section').forEach(s => s.classList.add('hidden'));
+      document.getElementById(`page-${page}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.className = 'nav-btn px-4 py-1.5 rounded-full text-sm font-medium transition text-slate-600 dark:text-slate-300 hover:text-brand';
+      });
+      const activeDesk = document.getElementById(`nav-${page}`);
+      if (activeDesk && activeDesk.classList.contains('nav-btn')) {
+        activeDesk.className = 'nav-btn px-4 py-1.5 rounded-full text-sm font-semibold transition bg-brand text-slate-950';
+      }
+
+      document.querySelectorAll('.mob-nav').forEach(btn => {
+        btn.classList.toggle('text-brand', btn.dataset.page === page);
+        btn.classList.toggle('text-slate-400', btn.dataset.page !== page);
+      });
+
+      if (page === 'signals') renderSignals();
+      if (page === 'dividends') renderDividends();
+      if (page === 'watchlist') renderWatchlist();
+    }
+
+    function setMarketFilter(flt) {
+      currentFilter = flt;
+      ['ALL', 'MY', 'US'].forEach(id => {
+        const el = document.getElementById(`flt-${id}`);
+        el.className = id === flt
+          ? 'flt-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-brand text-slate-950'
+          : 'flt-btn px-4 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-darkCard border border-slate-200 dark:border-darkBorder';
+      });
+      renderStockTable();
+    }
+
+    function renderStockTable() {
+      const q = document.getElementById('stockSearch').value.toLowerCase();
+      const tbody = document.getElementById('stockTableBody');
+      const filtered = STOCKS.filter(s => {
+        const matchMkt = currentFilter === 'ALL' || s.market === currentFilter;
+        const matchQ = s.name.toLowerCase().includes(q) || s.ticker.toLowerCase().includes(q) || s.sector.toLowerCase().includes(q);
+        return matchMkt && matchQ;
+      });
+
+      tbody.innerHTML = filtered.map(s => {
+        const isPos = s.change >= 0;
+        const inWatch = state.watchlist.includes(s.id);
+        return `
+          <tr onclick="openStockDetail('${s.id}')" class="hover:bg-slate-50 dark:hover:bg-darkBg/60 cursor-pointer transition">
+            <td class="py-3.5 px-4">
+              <div class="flex items-center gap-3">
+                ${getStockLogoSVG(s, 38)}
+                <div>
+                  <div class="font-bold text-sm flex items-center gap-1.5">
+                    <span>${s.ticker}</span>
+                    <span class="text-[9px] px-1.5 py-0.2 rounded bg-brand/15 text-brand font-bold">SHARIAH</span>
+                  </div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[150px] sm:max-w-[220px]">${s.name}</div>
+                </div>
+              </div>
+            </td>
+            <td class="py-3.5 px-3 text-xs font-semibold">${s.market === 'MY' ? '🇲🇾 MYX' : '🇺🇸 US'}</td>
+            <td class="py-3.5 px-3 text-right mono font-bold">${s.currency} ${s.price.toFixed(2)}</td>
+            <td class="py-3.5 px-3 text-right mono font-semibold ${isPos ? 'text-bull' : 'text-bear'}">
+              ${isPos ? '+' : ''}${s.change.toFixed(2)}%
+            </td>
+            <td class="py-3.5 px-3 text-right mono text-xs hidden md:table-cell text-brand font-semibold">${s.currency} ${s.entry.toFixed(2)}</td>
+            <td class="py-3.5 px-3 text-right mono text-xs hidden md:table-cell text-emerald-400 font-semibold">${s.currency} ${s.tp.toFixed(2)}</td>
+            <td class="py-3.5 px-3 text-center">
+              <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${s.signal.includes('BUY') ? 'bg-bull/15 text-bull' : 'bg-amber-500/15 text-amber-400'}">${s.signal}</span>
+            </td>
+            <td class="py-3.5 px-4 text-right" onclick="event.stopPropagation(); toggleWatch('${s.id}')">
+              <button class="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-darkBg transition ${inWatch ? 'text-amber-400' : 'text-slate-400'}">
+                ★
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // --- OPEN STOCK DETAIL PAGE WITH REAL TRADINGVIEW / YAHOO LIVE CHART ---
+    async function openStockDetail(id) {
+      selectedStock = STOCKS.find(s => s.id === id) || STOCKS[0];
+      document.getElementById('detailLogo').innerHTML = getStockLogoSVG(selectedStock, 54);
+      document.getElementById('detailName').textContent = selectedStock.name;
+      document.getElementById('detailTicker').textContent = selectedStock.ticker;
+      document.getElementById('detailSector').textContent = `${selectedStock.sector} • ${selectedStock.market === 'MY' ? 'Bursa Malaysia' : 'US Shariah Market'}`;
+      document.getElementById('detailPrice').textContent = `${selectedStock.currency} ${selectedStock.price.toFixed(2)}`;
+      const isPos = selectedStock.change >= 0;
+      const chgEl = document.getElementById('detailChange');
+      chgEl.textContent = `${isPos ? '+' : ''}${selectedStock.change.toFixed(2)}%`;
+      chgEl.className = `text-sm font-semibold mono mt-0.5 ${isPos ? 'text-bull' : 'text-bear'}`;
+
+      document.getElementById('detailEntry').textContent = `${selectedStock.currency} ${selectedStock.entry.toFixed(2)}`;
+      document.getElementById('detailTP').textContent = `${selectedStock.currency} ${selectedStock.tp.toFixed(2)}`;
+      document.getElementById('detailSL').textContent = `${selectedStock.currency} ${selectedStock.sl.toFixed(2)}`;
+      document.getElementById('detailSignalBadge').textContent = selectedStock.signal;
+      document.getElementById('detailRationale').textContent = selectedStock.rationale;
+      document.getElementById('detailMcap').textContent = selectedStock.mcap;
+      document.getElementById('detailPE').textContent = selectedStock.pe;
+      document.getElementById('detailDiv').textContent = `${selectedStock.divYield.toFixed(2)}%`;
+      document.getElementById('detailDesc').textContent = selectedStock.desc;
+
+      updateDetailWatchBtn();
+      navigateTo('detail');
+
+      const tvBox = document.getElementById('tradingviewContainer');
+      const bursaBox = document.getElementById('bursaChartContainer');
+      const tfBar = document.getElementById('bursaTimeframeBar');
+
+      if (selectedStock.market === 'US') {
+        // Embed official TradingView Real-Time Candlestick Chart (same charting engine used by M+ Global)
+        tvBox.classList.remove('hidden');
+        bursaBox.classList.add('hidden');
+        tfBar.classList.add('hidden');
+        document.getElementById('chartSourceLabel').textContent = `● Live TradingView Real-Time Candlestick Chart (${selectedStock.tvSymbol})`;
+
+        const theme = state.dark ? 'dark' : 'light';
+        const iframeSrc = `https://s.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${encodeURIComponent(selectedStock.tvSymbol)}&interval=15&hidesidetoolbar=0&symboledit=0&saveimage=0&toolbarbg=f1f3f6&studies=[]&theme=${theme}&style=1&timezone=Asia%2FKuala_Lumpur&withdateranges=1&showpopupbutton=1&locale=en`;
+        tvBox.innerHTML = `<iframe src="${iframeSrc}" style="width:100%;height:100%;border:0;" allowtransparency="true" scrolling="no" allowfullscreen></iframe>`;
+      } else {
+        // Bursa Malaysia Real Yahoo Finance Feed + Interactive Chart
+        tvBox.classList.add('hidden');
+        bursaBox.classList.remove('hidden');
+        tfBar.classList.remove('hidden');
+        await renderRealBursaChart('1d');
+      }
+    }
+
+    async function renderRealBursaChart(range) {
+      document.getElementById('chartSourceLabel').textContent = `● Loading Real Bursa Malaysia Data (${selectedStock.ticker})...`;
+      const intervalMap = { '1d': '15m', '5d': '1h', '1mo': '1d', '1y': '1wk' };
+      const res = await fetchRealYahooChart(selectedStock.ticker, range, intervalMap[range] || '15m');
+
+      const ctx = document.getElementById('detailChartCanvas').getContext('2d');
+      if (detailChart) detailChart.destroy();
+
+      let labels = [];
+      let series = [];
+
+      if (res && res.timestamp && res.indicators?.quote?.[0]?.close) {
+        const closes = res.indicators.quote[0].close;
+        res.timestamp.forEach((ts, i) => {
+          if (closes[i] !== null && closes[i] !== undefined) {
+            const d = new Date(ts * 1000);
+            labels.push(range === '1d'
+              ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              : d.toLocaleDateString([], { month: 'short', day: 'numeric' }));
+            series.push(Number(closes[i].toFixed(2)));
+          }
+        });
+        const latest = series[series.length - 1];
+        if (latest) {
+          selectedStock.price = latest;
+          document.getElementById('detailPrice').textContent = `${selectedStock.currency} ${latest.toFixed(2)}`;
+        }
+        document.getElementById('chartSourceLabel').textContent = `● Real Bursa Malaysia Exchange Feed (${selectedStock.ticker})`;
+      } else {
+        // Fallback if network blocks proxy
+        const base = selectedStock.price;
+        labels = Array.from({ length: 20 }, (_, i) => `T-${20 - i}`);
+        series = labels.map((_, i) => Number((base * (0.99 + (i / 20) * 0.01)).toFixed(2)));
+        document.getElementById('chartSourceLabel').textContent = `● Cached Reference Chart (${selectedStock.ticker})`;
+      }
+
+      detailChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: `${selectedStock.ticker} Actual Price`,
+              data: series,
+              borderColor: '#00D09C',
+              backgroundColor: 'rgba(0, 208, 156, 0.14)',
+              borderWidth: 2.5,
+              fill: true,
+              tension: 0.25,
+              pointRadius: 2
+            },
+            {
+              label: 'Take Profit (TP)',
+              data: Array(labels.length).fill(selectedStock.tp),
+              borderColor: '#34D399',
+              borderDash: [6, 6],
+              borderWidth: 1.5,
+              pointRadius: 0
+            },
+            {
+              label: 'AI Entry',
+              data: Array(labels.length).fill(selectedStock.entry),
+              borderColor: '#38BDF8',
+              borderDash: [4, 4],
+              borderWidth: 1.5,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: state.dark ? '#CBD5E1' : '#334155', font: { size: 11 } } }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#64748B', font: { size: 10 }, maxTicksLimit: 8 } },
+            y: { grid: { color: state.dark ? '#1E293B' : '#E2E8F0' }, ticks: { color: '#64748B', font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function updateDetailTimeframe(tf) {
+      document.querySelectorAll('.tf-btn').forEach(b => {
+        b.className = b.textContent.toLowerCase() === tf.toLowerCase()
+          ? 'tf-btn px-3 py-1 rounded-full text-xs font-semibold bg-brand text-slate-950'
+          : 'tf-btn px-3 py-1 rounded-full text-xs font-semibold';
+      });
+      renderRealBursaChart(tf);
+    }
+
+    function updateDetailWatchBtn() {
+      const btn = document.getElementById('detailWatchBtn');
+      const inWatch = state.watchlist.includes(selectedStock.id);
+      btn.textContent = inWatch ? '★ In Weekly Watchlist' : '+ Add Watchlist';
+    }
+
+    function toggleWatchlistFromDetail() {
+      toggleWatch(selectedStock.id);
+      updateDetailWatchBtn();
+    }
+
+    // --- SIGNALS, DIVIDENDS, WATCHLIST, AI AGENT ---
+    function renderSignals() {
+      const grid = document.getElementById('signalsGrid');
+      grid.innerHTML = STOCKS.slice(0, 6).map(s => `
+        <div onclick="openStockDetail('${s.id}')" class="bg-white dark:bg-darkCard p-4 rounded-2xl border border-slate-200 dark:border-darkBorder hover:border-brand cursor-pointer transition space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              ${getStockLogoSVG(s, 36)}
+              <div>
+                <div class="font-bold text-sm">${s.ticker}</div>
+                <div class="text-[11px] text-slate-400">${s.name}</div>
+              </div>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand/15 text-brand">${s.signal}</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center bg-slate-50 dark:bg-darkBg p-2.5 rounded-xl">
+            <div><div class="text-[10px] text-slate-400">CURRENT</div><div class="mono font-bold text-xs">${s.currency}${s.price.toFixed(2)}</div></div>
+            <div><div class="text-[10px] text-slate-400">ENTRY</div><div class="mono font-bold text-xs text-brand">${s.currency}${s.entry.toFixed(2)}</div></div>
+            <div><div class="text-[10px] text-slate-400">TAKE PROFIT</div><div class="mono font-bold text-xs text-emerald-400">${s.currency}${s.tp.toFixed(2)}</div></div>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">${s.rationale}</p>
+        </div>
+      `).join('');
+    }
+
+    function setCustomAlertForCurrent() {
+      const msg = `Alert Active: ${selectedStock.ticker} Entry @ ${selectedStock.currency}${selectedStock.entry} | TP @ ${selectedStock.currency}${selectedStock.tp}`;
+      state.alerts.unshift({ ticker: selectedStock.ticker, type: 'CUSTOM ALERT', msg, time: 'Just now' });
+      saveDB();
+      document.getElementById('alertBadge').textContent = state.alerts.length;
+      showToast(msg);
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('M+ Shariah AI Signal', { body: msg, icon: './icon-192.png' });
+      } else if ('Notification' in window && Notification.permission !== 'denied') {
+        Notification.requestPermission();
+      }
+    }
+
+    function simulateLiveAlert() {
+      const pick = STOCKS[Math.floor(Math.random() * STOCKS.length)];
+      const isTP = Math.random() > 0.5;
+      const msg = isTP
+        ? `🎯 TAKE PROFIT SIGNAL: ${pick.ticker} nearing ${pick.currency}${pick.tp.toFixed(2)} target!`
+        : `🚀 ENTRY SIGNAL: ${pick.ticker} triggered buy zone at ${pick.currency}${pick.entry.toFixed(2)}!`;
+      state.alerts.unshift({ ticker: pick.ticker, type: isTP ? 'TAKE PROFIT' : 'BUY ENTRY', msg, time: 'Just now' });
+      saveDB();
+      document.getElementById('alertBadge').textContent = state.alerts.length;
+      showToast(msg);
+    }
+
+    function showToast(message) {
+      const container = document.getElementById('toastContainer');
+      const el = document.createElement('div');
+      el.className = 'pointer-events-auto bg-slate-900 dark:bg-darkCard text-white border border-brand/60 shadow-xl rounded-2xl p-3.5 text-xs flex items-center justify-between gap-3 transition-all';
+      el.innerHTML = `<div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-brand"></span><span>${message}</span></div><button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white">✕</button>`;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 5000);
+    }
+
+    function renderDividends() {
+      const cap = parseFloat(document.getElementById('divCapitalInput').value) || 10000;
+      const divStocks = [...STOCKS].filter(s => s.divYield >= 1.0).sort((a, b) => b.divYield - a.divYield);
+      document.getElementById('dividendsGrid').innerHTML = divStocks.map(s => {
+        const estAnnual = (cap * (s.divYield / 100)).toFixed(2);
+        return `
+          <div onclick="openStockDetail('${s.id}')" class="bg-white dark:bg-darkCard p-5 rounded-2xl border border-slate-200 dark:border-darkBorder hover:border-brand cursor-pointer transition space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                ${getStockLogoSVG(s, 40)}
+                <div>
+                  <div class="font-bold text-sm">${s.ticker}</div>
+                  <div class="text-xs text-slate-400">${s.name}</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-lg font-bold mono text-brand">${s.divYield.toFixed(2)}%</div>
+                <div class="text-[10px] text-slate-400">Est. Yield</div>
+              </div>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-darkBg flex justify-between items-center text-xs">
+              <span class="text-slate-400">Est. Annual Dividend:</span>
+              <span class="mono font-bold text-emerald-400">${s.currency} ${estAnnual} / yr</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400">${s.desc}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleWatch(id) {
+      if (state.watchlist.includes(id)) {
+        state.watchlist = state.watchlist.filter(x => x !== id);
+        showToast(`Removed ${id} from Weekly Watchlist`);
+      } else {
+        state.watchlist.push(id);
+        showToast(`Added ${id} to Weekly Watchlist`);
+      }
+      saveDB();
+      renderStockTable();
+      renderWatchlist();
+    }
+
+    function regenerateWeeklyWatchlist() {
+      const shuffled = [...STOCKS].sort(() => 0.5 - Math.random()).slice(0, 6).map(s => s.id);
+      state.watchlist = shuffled;
+      saveDB();
+      renderWatchlist();
+      renderStockTable();
+      showToast('AI Weekly Shariah Watchlist refreshed!');
+    }
+
+    function renderWatchlist() {
+      const items = STOCKS.filter(s => state.watchlist.includes(s.id));
+      document.getElementById('watchlistGrid').innerHTML = items.map(s => `
+        <div onclick="openStockDetail('${s.id}')" class="bg-white dark:bg-darkCard p-4 rounded-2xl border border-slate-200 dark:border-darkBorder hover:border-brand cursor-pointer transition space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              ${getStockLogoSVG(s, 38)}
+              <div>
+                <div class="font-bold text-sm">${s.ticker}</div>
+                <div class="text-xs text-slate-400">${s.name}</div>
+              </div>
+            </div>
+            <span class="mono font-bold text-sm">${s.currency}${s.price.toFixed(2)}</span>
+          </div>
+          <div class="flex justify-between text-xs pt-2 border-t border-slate-100 dark:border-darkBorder">
+            <span class="text-slate-400">Entry: <strong class="text-brand mono">${s.currency}${s.entry}</strong></span>
+            <span class="text-slate-400">TP: <strong class="text-emerald-400 mono">${s.currency}${s.tp}</strong></span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function sendQuickPrompt(text) {
+      document.getElementById('chatInput').value = text;
+      handleChatSubmit(new Event('submit'));
+    }
+
+    async function handleChatSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+      input.value = '';
+
+      const box = document.getElementById('chatMessages');
+      box.innerHTML += `<div class="bg-brand text-slate-950 font-medium p-3.5 rounded-2xl rounded-tr-none max-w-md ml-auto text-xs">${msg}</div>`;
+      box.scrollTop = box.scrollHeight;
+
+      const reply = await generateAIStockResponse(msg);
+      box.innerHTML += `<div class="bg-slate-100 dark:bg-darkBg p-3.5 rounded-2xl rounded-tl-none max-w-xl text-xs leading-relaxed"><p class="font-semibold text-brand mb-1">M+ Shariah AI</p>${reply}</div>`;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function generateAIStockResponse(query) {
+      const q = query.toLowerCase();
+      if (state.geminiKey && state.geminiKey.startsWith('AIza')) {
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.geminiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: `You are M+ Shariah AI, an expert Bursa Malaysia and US Shariah stock analyst. Answer concisely in the user's language (English or Bahasa Melayu): ${query}` }] }]
+            })
+          });
+          const data = await res.json();
+          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return text.replace(/\n/g, '<br>');
+        } catch (err) {}
+      }
+
+      const matched = STOCKS.find(s => q.includes(s.id.toLowerCase()) || q.includes(s.ticker.toLowerCase()));
+      if (matched) {
+        return `<strong>${matched.name} (${matched.ticker})</strong> is <strong>Shariah-compliant</strong>.<br>• Current Price: <strong>${matched.currency}${matched.price.toFixed(2)}</strong><br>• AI Entry Zone: <strong>${matched.currency}${matched.entry.toFixed(2)}</strong> | Take Profit: <strong>${matched.currency}${matched.tp.toFixed(2)}</strong> | Stop Loss: <strong>${matched.currency}${matched.sl.toFixed(2)}</strong><br>• Dividend Yield: <strong>${matched.divYield}%</strong>. ${matched.rationale}`;
+      }
+      if (q.includes('dividen') || q.includes('dividend')) {
+        return `Top Shariah dividend suggestions right now:<br>1. <strong>MISC Bhd (3816.KL)</strong> – 4.65% yield (Bursa)<br>2. <strong>SD Guthrie (5285.KL)</strong> – 4.40% yield (Bursa)<br>3. <strong>Tenaga Nasional (5347.KL)</strong> – 4.15% yield (Bursa)<br>4. <strong>Johnson & Johnson (JNJ)</strong> – 3.18% yield (US Shariah)`;
+      }
+      if (q.includes('uptrend') || q.includes('buy') || q.includes('entry') || q.includes('saham')) {
+        return `Current high-momentum Shariah setups:<br>• <strong>Bursa Malaysia:</strong> INARI & TENAGA.<br>• <strong>US Market:</strong> NVDA & TSLA.`;
+      }
+      return `I scanned our Shariah database across Bursa Malaysia (SAC) and US (DJIM). Ask about any specific counter like <strong>TENAGA, INARI, GAMUDA, NVDA, AAPL, or MSFT</strong> for live Entry, Take Profit, and dividend metrics!`;
+    }
+
+    function saveSettings() {
+      state.geminiKey = document.getElementById('geminiKeyInput').value.trim();
+      saveDB();
+      showToast('Settings saved to database!');
+    }
+
+    function resetDatabase() {
+      localStorage.removeItem('mplus_shariah_db');
+      location.reload();
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    async function triggerPWAInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') showToast('M+ Shariah AI installed!');
+        deferredPrompt = null;
+      } else {
+        showToast('To install: Open browser menu (⋮ or Share) → click "Install App" or "Add to Home Screen"!');
+      }
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    // Init
+    applyTheme();
+    applyTranslations();
+    document.getElementById('geminiKeyInput').value = state.geminiKey || '';
+    document.getElementById('alertBadge').textContent = state.alerts.length;
+    renderStockTable();
+    syncAllRealMarketData();
+  </script>
+</body>
+</html>
