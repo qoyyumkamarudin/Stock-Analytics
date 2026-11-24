@@ -1,6 +1,6 @@
 {
-  "name": "M+ Shariah AI - Stock Analysis & Signals",
-  "short_name": "M+ Shariah AI",
+  "name": "Stock Monitor AI - Stock Analysis & Signals",
+  "short_name": "Stock Monitor AI",
   "description": "AI-powered Shariah stock analysis, live Bursa Malaysia & US charts, entry/TP alerts, and dividend screener.",
   "start_url": "./index.html",
   "scope": "./",
